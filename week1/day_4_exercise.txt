@@ -1,0 +1,50 @@
+#3.3.1)
+#1)
+# Because the color = "blue" shouldn't be inside the aes.
+
+#3.3.1)
+#2)
+# Categorical : manufacturer, model, year, cyl, trans, drv, fl, class
+# Continuous : disp, cty, hwy
+
+#3)
+# For categoracal, it's hard to recognize any pattern. 
+
+
+#3.5.1)
+#1) It woudn't make any difference from using facet on a categorical variable.
+
+#4) It gives us the chance to llok at differnt mappings individually which is more clear. For a larger dataset, it might make our plot harder to interpret.
+
+
+#3.6.1)
+#5) They will look the same. Set of mappings are passed in the first graph which treats them as global mapping, thus acheving the same result as displaying multiple mappings on the same plot(second graph).
+
+#6) 
+# ggplot(mpg, aes(x = displ, y = hwy)) +
+     geom_point() +
+     geom_smooth()
+
+# ggplot(data = mpg,) + 
+     geom_point(mapping = aes(x = displ, y = hwy)) +
+     geom_smooth(se = FALSE, mapping = aes(x = displ, y = hwy,group = drv))
+
+# ggplot(data = mpg,) + 
+     geom_point(mapping = aes(x = displ, y = hwy,  color = drv)) +
+     geom_smooth(se = FALSE, mapping = aes(x = displ, y = hwy,group = drv))
+
+# ggplot(mpg, aes(x = displ, y = hwy)) +
+     geom_point(aes(colour = drv)) +
+     geom_smooth(se = FALSE)
+
+#  ggplot(data = mpg,) + 
+    geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+    geom_smooth(se = FALSE, mapping = aes(x = displ, y = hwy,group = drv,linetype = drv))
+
+# ggplot(data = mpg) +
+    geom_point(mapping = aes(x = displ, y = hwy, color = drv))
+
+#3.8.1
+#1) Overplotting. Can be improved by setting position adjustment to make it somehow random.
+
+#2) Position. 
