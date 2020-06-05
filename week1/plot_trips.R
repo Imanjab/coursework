@@ -19,11 +19,46 @@ load('trips.RData')
 
 # plot the distribution of trip times across all rides (compare a histogram vs. a density plot)
 
+#histogram
+trips %>% 
+    filter(tripduration < 3600) %>% 
+    ggplot(aes(x=tripduration)) + 
+        geom_histogram()
+
+#density_plot
+trips %>% 
+    filter(tripduration < 3600) %>% 
+    ggplot(aes(x=tripduration)) + 
+        geom_density()
+
 # plot the distribution of trip times by rider type indicated using color and fill (compare a histogram vs. a density plot)
+#histogram
+trips %>% 
+    filter(tripduration <= 3600) %>% 
+    group_by(usertype) %>% 
+    ggplot(aes(x = tripduration, color = usertype, fill = usertype)) +  
+       geom_histogram()
+
+#density_plot
+trips %>% 
+    filter(tripduration <= 3600) %>% 
+    group_by(usertype) %>% 
+    ggplot(aes(x = tripduration, color = usertype)) +  
+       geom_density()
 
 # plot the total number of trips on each day in the dataset
+trips %>% 
+    filter(tripduration <= 3600) %>% 
+    mutate(day = as.Date(ymd)) %>%
+    group_by(day) %>% 
+    ggplot(aes(x = day)) + 
+        geom_histogram()
 
 # plot the total number of trips (on the y axis) by age (on the x axis) and gender (indicated with color)
+trips %>% 
+    filter(tripduration <= 3600, birth_year >= 1940) %>% 
+    ggplot(aes(x = birth_year, color = gender, fill = gender)) + 
+        geom_histogram()
 
 # plot the ratio of male to female trips (on the y axis) by age (on the x axis)
 # hint: use the spread() function to reshape things to make it easier to compute this ratio
@@ -33,6 +68,10 @@ load('trips.RData')
 # plot weather data
 ########################################
 # plot the minimum temperature (on the y axis) over each day (on the x axis)
+weather %>% 
+    ggplot(aes(x = DATE, y = TMIN)) + 
+       geom_line()
+
 
 # plot the minimum temperature and maximum temperature (on the y axis, with different colors) over each day (on the x axis)
 # hint: try using the gather() function for this to reshape things before plotting
