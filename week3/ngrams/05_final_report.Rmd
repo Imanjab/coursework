@@ -1,6 +1,6 @@
 ---
 title: "MSD Homework 2, Problem 3"
-author: "Your Name (your uni)"
+author: "Iman Abakoyas (Lehman College)"
 date: '`r Sys.time()`'
 output:
   pdf_document:
