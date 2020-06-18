@@ -1,0 +1,196 @@
+---
+title: "Citibke Prediction"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(scales)
+library(modelr)
+
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ 
+
+```{r cars}
+trips <- read_tsv("trips_per_day.tsv")
+set.seed(42)
+days <- nrow(trips)
+training <- 0.8
+validating <- 0.1
+testing <- 0.1
+
+training_days <- floor(training * days)
+
+ndx <- sample(1:days, training_days, replace = FALSE)
+
+trips_training <- trips[ndx, ]
+trips_valid <- trips[sample(1:days, floor(days * validating), replace = FALSE ), ]
+trips_testing <- trips[sample(1:days, floor(days * testing), replace = FALSE ), ]
+
+```
+
+
+
+```{r}
+K <- 1:8
+training_error <- c()
+eval_error <- c()
+
+for(k in K){ 
+     model <- lm(num_trips ~ poly(tmin, k, raw = T), data = trips_training)  
+     training_error[k] <- sqrt(mean((predict(model, trips_training) -   trips_training$num_trips)^2))                    
+     eval_error[k] <- sqrt(mean((predict(model, trips_valid) - trips_valid$num_trips)^2))
+}
+```
+
+
+```{r}
+
+plot_data <- data.frame(K, training_error, eval_error)  %>% gather("split", "error", -K)
+
+plot_data %>% ggplot(aes(x = k, y = error, color = split)) +
+geom_line() +
+xlab('Polynomial') +
+ylab('RMSE') +
+scale_y_continuous()
+
+```
+
+```{r}
+model <- lm(num_trips ~ poly(tmin, 5, raw = T), data = trips_training)
+
+trips_training <- trips_training %>% add_predictions(model) %>% mutate(split = "train")
+
+trips_valid <- trips_valid %>% add_predictions(model) %>% mutate(split = "validate")
+
+plot_data <- bind_rows(trips_training, trips_valid)
+
+ggplot(plot_data, aes(x = tmin, y = num_trips)) +
+geom_point(aes(color = split)) +
+geom_line(aes(y = pred)) +
+xlab('Min Temp') +
+ylab('Trips') +
+scale_y_continuous()
+
+```
+
+
+```{r}
+model <- lm(num_trips ~ poly(tmin, 5, raw = T), data= trips_testing)
+
+trips_testing <- trips_testing %>% add_predictions(model) %>% mutate(split = "test")
+
+trips_testing %>% ggplot(aes(x = tmin, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  xlab('Min.Temp') +
+  ylab('Trips') +
+  scale_y_continuous()
+
+trips_testing %>% ggplot(aes(x = pred, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  xlab('Predicted') +
+  ylab('Actual') +
+  scale_y_continuous()
+
+```
+
+
+
+```{r}
+trips <- read_tsv("trips_per_day.tsv")
+
+trips <- trips %>% mutate(weekday = weekdays(ymd)) %>% mutate(weekday = factor(weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"), labels=c("1","2","3","4","5","6","7")) ) %>% mutate(weekday = as.numeric(weekday))
+
+num_days <- nrow(trips)
+```
+
+
+```{r}
+set.seed(42)
+frac_train <- 0.8
+frac_valid <- 0.1
+frac_test <- 0.1
+
+num_train <- floor(num_days * frac_train)
+
+ndx <- sample(1:num_days, num_train, replace = FALSE )
+
+trips_train <- trips[ndx, ]
+
+trips_valid <- trips[sample(1:num_days, floor(num_days * frac_valid), replace = FALSE ), ]
+
+trips_test <- trips[sample(1:num_days, floor(num_days * frac_test), replace = FALSE ), ]
+
+
+```
+
+```{r}
+K <- 1:6
+
+train_error <- c()
+validate_error <- c()
+
+for(k in K){ 
+     model <- lm(num_trips ~ poly(weekday, k, raw = T), data = trips_train)  
+     train_error[k] <- sqrt(mean((predict(model, trips_train) -   trips_train$num_trips)^2))                    
+     validate_error[k] <- sqrt(mean((predict(model, trips_valid) - trips_valid$num_trips)^2)) 
+}
+
+```
+
+```{r}
+plot_data <- data.frame(K, train_error, validate_error) %>%gather("split", "error", -K)
+ggplot(plot_data, aes(x=K, y=error, color=split)) +
+     geom_line() +
+     scale_x_continuous(breaks=K) +
+     xlab('Polynomial Degree') +
+     ylab('RMSE')
+```
+
+#I used the 5th degree polynomial
+```{r}
+model <- lm(num_trips ~ poly(weekday, 5, raw = T), data = trips_train)
+trips_train <- trips_train %>% add_predictions(model) %>% mutate(split = "train")
+trips_valid <- trips_valid %>% add_predictions(model) %>% mutate(split = "validate")
+plot_data <- bind_rows(trips_train, trips_valid)
+
+ggplot(plot_data, aes(x = ymd, y = num_trips)) +
+geom_point(aes(color = split)) +
+geom_line(aes(y = pred)) +
+xlab('YMD') +
+ylab('Daily trips') +
+scale_y_continuous()
+
+```
+```{r}
+plot_data %>% ggplot(aes(x= pred, y = num_trips)) + geom_point(aes(color = split)) + geom_line(aes(y = pred)) + xlab("Predicted") + ylab("Actual") + scale_y_continuous()
+
+```
+
+```{r}
+model <- lm(num_trips ~ poly(weekday, 5, raw = T), data= trips_test)
+
+trips_test <- trips_test %>% add_predictions(model) %>% mutate(split = "test")
+
+trips_test %>% ggplot(aes(x = ymd, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  xlab('YMD') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+trips_test %>% ggplot(aes(x = pred, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  xlab('Predicted') +
+  ylab('Actual') +
+  scale_y_continuous()
+
+```
+
