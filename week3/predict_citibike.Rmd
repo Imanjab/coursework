@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 trips <- read_tsv("trips_per_day.tsv")
 
-trips <- trips %>% mutate(weekday = as.factor(wday(ymd)), is_weekend = (weekday == 1 | weekday == 7), is_holiday = !is.na(holiday), prcp_level = as.numeric(prcp >= 0.3))
+holiday <- read_csv("US Bank holidays.csv", col_names = c('num','ymd','holiday'))
+
+trips <- trips %>% left_join(holiday, by = "ymd") %>% mutate(weekday = as.factor(wday(ymd)), is_weekend = (weekday == 1 | weekday == 7), is_holiday = !is.na(holiday), prcp_level = as.numeric(prcp >= 0.3))
 
 num_days <- nrow(trips)
 ```
@@ -55,7 +57,7 @@ for(k in K){
      validate_error[k] <- sqrt(mean((predict(model, trips_valid) - trips_valid$num_trips)^2)) 
 }
 
-model
+summary(model)
 ```
 
 ```{r}
@@ -68,9 +70,9 @@ ggplot(plot_data, aes(x=K, y=error, color=split)) +
      ylab('RMSE')
 ```
 
-#I used the 10th degree polynomial
+#I used the 4th degree polynomial
 ```{r}
-model <- lm(num_trips ~ poly(tmin, 10, raw = T)+ weekday + poly(tmax, k, raw = T) + poly(snwd, k, raw = T)  + prcp_level + is_weekend + is_holiday, data = trips_train)
+model <- lm(num_trips ~ poly(tmin, 4, raw = T)+ weekday + poly(tmax, 4, raw = T) + poly(snwd, 4, raw = T)  + prcp_level + is_weekend + is_holiday, data = trips_train)
 
 
 trips_train <- trips_train %>% add_predictions(model) %>% mutate(split = "train")
@@ -91,24 +93,13 @@ plot_data %>% ggplot(aes(x= pred, y = num_trips))  + geom_point(aes(color = spli
 ```
 
 ```{r}
-test_error <- sqrt(mean((predict(model, trips_test)- trips_test$num_trips)^2))
+rmse(model, trips_test)
 
-plot_data_test <- data.frame(K, test_error) %>%gather("split", "error", -K)
-plot_data_test
 ```
 
 
 ```{r}
-ggplot(plot_data_test, aes(x=K, y=error, color=split)) +
-     geom_line() +
-     scale_x_continuous(breaks=K) +
-     xlab('Polynomial Degree') +
-     ylab('RMSE')
-```
-
-
-```{r}
-model <- lm(num_trips ~ poly(tmin, 10, raw = T) + poly(tmax, k, raw = T) + poly(snwd, k, raw = T) +  weekday + prcp_level + is_weekend + is_holiday, data= trips_test)
+model <- lm(num_trips ~ poly(tmin, 4, raw = T) + poly(tmax, 4, raw = T) + poly(snwd, 4, raw = T) +  weekday + prcp_level + is_weekend + is_holiday, data= trips_test)
 
 trips_test <- trips_test %>% add_predictions(model) %>% mutate(split = "test")
 
